@@ -12,6 +12,7 @@ const STORAGE_KEYS = {
   FIGURINHAS: "circuito_caju:figurinhas",
   PREMIOS_RESGATADOS: "circuito_caju:premios_resgatados",
   CHECKINS: "circuito_caju:checkins",
+  FEEDBACKS: "circuito_caju:feedbacks",
   USUARIO: "circuito_caju:usuario",
   CADASTRO_COMPLETO: "circuito_caju:cadastro_completo",
 } as const;
@@ -37,6 +38,24 @@ function salvarStorage<T>(chave: string, valor: T): void {
 
 export type PerfilType = "acessivel" | "conforto" | "explorador";
 
+export interface FeedbackResposta {
+  perguntaId: string;
+  perguntaTexto: string;
+  respostaId: string;
+  respostaTexto: string;
+}
+
+export interface FeedbackRegistro {
+  id: string;
+  barracaId: number;
+  barracaNome: string;
+  conjuntoId: string;
+  respostas: FeedbackResposta[];
+  comentario: string;
+  pontosBonus: number;
+  criadoEm: string;
+}
+
 export interface AppState {
   // Dados do usuário
   usuario: Usuario;
@@ -48,6 +67,7 @@ export interface AppState {
   figurinhas: Figurinha[];
   premiosResgatados: number[];
   checkins: number[]; // IDs das barracas já visitadas
+  feedbacks: FeedbackRegistro[];
 
   // Dados estáticos (mocks)
   recompensas: Recompensa[];
@@ -57,6 +77,11 @@ export interface AppState {
   confirmarCadastro: (_usuario: Usuario) => void;
   selecionarPerfil: (_perfil: PerfilType) => void;
   fazerCheckin: (_barracaId: number) => void;
+  registrarFeedback: (
+    _feedback: Omit<FeedbackRegistro, "id" | "pontosBonus" | "criadoEm"> & {
+      pontosBonus?: number;
+    },
+  ) => void;
   resgatarPremio: (_premioId: number) => void;
   resetarProgresso: () => void;
 
@@ -97,6 +122,10 @@ export function useAppStore(): AppState {
     lerStorage(STORAGE_KEYS.CHECKINS, []),
   );
 
+  const [feedbacks, setFeedbacks] = useState<FeedbackRegistro[]>(() =>
+    lerStorage(STORAGE_KEYS.FEEDBACKS, []),
+  );
+
   // --- Sincroniza com localStorage sempre que o estado muda ---
   useEffect(() => {
     salvarStorage(STORAGE_KEYS.USUARIO, usuario);
@@ -125,6 +154,10 @@ export function useAppStore(): AppState {
   useEffect(() => {
     salvarStorage(STORAGE_KEYS.CHECKINS, checkins);
   }, [checkins]);
+
+  useEffect(() => {
+    salvarStorage(STORAGE_KEYS.FEEDBACKS, feedbacks);
+  }, [feedbacks]);
 
   // --- Ações ---
   const confirmarCadastro = useCallback((dados: Usuario) => {
@@ -160,6 +193,26 @@ export function useAppStore(): AppState {
     [checkins],
   );
 
+  const registrarFeedback = useCallback(
+    (
+      feedback: Omit<FeedbackRegistro, "id" | "pontosBonus" | "criadoEm"> & {
+        pontosBonus?: number;
+      },
+    ) => {
+      const pontosBonus = feedback.pontosBonus ?? 20;
+      const novoFeedback: FeedbackRegistro = {
+        ...feedback,
+        id: globalThis.crypto?.randomUUID?.() ?? `feedback-${Date.now()}`,
+        pontosBonus,
+        criadoEm: new Date().toISOString(),
+      };
+
+      setFeedbacks((prev) => [...prev, novoFeedback]);
+      setPontos((prev) => prev + pontosBonus);
+    },
+    [],
+  );
+
   const resgatarPremio = useCallback(
     (premioId: number) => {
       const premio = RECOMPENSAS_MOCK.find((r) => r.id === premioId);
@@ -177,6 +230,7 @@ export function useAppStore(): AppState {
     setFigurinhas(FIGURINHAS_MOCK);
     setPremiosResgatados([]);
     setCheckins([]);
+    setFeedbacks([]);
   }, []);
 
   // --- Computed values ---
@@ -209,6 +263,7 @@ export function useAppStore(): AppState {
     figurinhas,
     premiosResgatados,
     checkins,
+    feedbacks,
 
     // Dados estáticos
     recompensas: RECOMPENSAS_MOCK,
@@ -218,6 +273,7 @@ export function useAppStore(): AppState {
     confirmarCadastro,
     selecionarPerfil,
     fazerCheckin,
+    registrarFeedback,
     resgatarPremio,
     resetarProgresso,
 

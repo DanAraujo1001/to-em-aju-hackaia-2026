@@ -1,0 +1,103 @@
+{
+  "conjuntos": [
+    {
+      "id": "qualidade-atendimento-retencao",
+      "titulo": "Foco em Qualidade, Atendimento e Retenção",
+      "perguntas": [
+        {
+          "id": "qualidade-1",
+          "texto": "O que achou da comida/bebida dessa barraca?",
+          "opcoes": [
+            { "id": "qualidade-1-a", "texto": "Uma delícia, de lamber os beiços!" },
+            { "id": "qualidade-1-b", "texto": "Bom do cabrunco!" },
+            { "id": "qualidade-1-c", "texto": "Faltou tempero, podia ser melhor." }
+          ]
+        },
+        {
+          "id": "qualidade-2",
+          "texto": "Como foi o atendimento do pessoal?",
+          "opcoes": [
+            { "id": "qualidade-2-a", "texto": "Arretado de bom! (Super simpáticos e ágeis)" },
+            { "id": "qualidade-2-b", "texto": "Normal, deu pro gasto." },
+            { "id": "qualidade-2-c", "texto": "Vixe, achei demorado/frio." }
+          ]
+        },
+        {
+          "id": "qualidade-3",
+          "texto": "Você voltaria nessa barraca hoje ou em uma próxima festa?",
+          "opcoes": [
+            { "id": "qualidade-3-a", "texto": "Com certeza, já tô na fila de novo!" },
+            { "id": "qualidade-3-b", "texto": "Talvez, se a fome apertar." },
+            { "id": "qualidade-3-c", "texto": "Nem amarrado, vou provar outras." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "agilidade-preco-diferencial",
+      "titulo": "Foco em Agilidade, Preço e Diferencial",
+      "perguntas": [
+        {
+          "id": "agilidade-1",
+          "texto": "Como tava o tamanho da fila aqui nessa barraca?",
+          "opcoes": [
+            { "id": "agilidade-1-a", "texto": "Tranquila, peguei rapidinho!" },
+            { "id": "agilidade-1-b", "texto": "Um pouquinho cheia, mas andou bem." },
+            { "id": "agilidade-1-c", "texto": "Quase perdi o forró esperando." }
+          ]
+        },
+        {
+          "id": "agilidade-2",
+          "texto": "E o preço, achou justo pelo que foi servido?",
+          "opcoes": [
+            { "id": "agilidade-2-a", "texto": "Preço de amigo, achei top!" },
+            { "id": "agilidade-2-b", "texto": "Justo, valeu a pena o investimento." },
+            { "id": "agilidade-2-c", "texto": "Salgado demais, doeu no bolso." }
+          ]
+        },
+        {
+          "id": "agilidade-3",
+          "texto": "O que fez você escolher essa barraca pra parar?",
+          "opcoes": [
+            { "id": "agilidade-3-a", "texto": "O cheiro bom e a aparência da comida." },
+            { "id": "agilidade-3-b", "texto": "O visual, a decoração e a animação!" },
+            { "id": "agilidade-3-c", "texto": "Foi a primeira que vi (pura fome mesmo!)." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "higiene-clima-satisfacao",
+      "titulo": "Foco em Higiene, Clima e Satisfação Geral",
+      "perguntas": [
+        {
+          "id": "higiene-1",
+          "texto": "O que você achou da limpeza e organização da barraca?",
+          "opcoes": [
+            { "id": "higiene-1-a", "texto": "Um brinco! Tudo limpinho." },
+            { "id": "higiene-1-b", "texto": "Tá ok, dentro do esperado pra festa." },
+            { "id": "higiene-1-c", "texto": "Precisando de uma arrumação, meio bagunçado." }
+          ]
+        },
+        {
+          "id": "higiene-2",
+          "texto": "Qual foi o grande destaque da sua experiência aqui?",
+          "opcoes": [
+            { "id": "higiene-2-a", "texto": "O sabor da comida, sem dúvida." },
+            { "id": "higiene-2-b", "texto": "A simpatia de quem me atendeu." },
+            { "id": "higiene-2-c", "texto": "O clima junino e a rapidez." }
+          ]
+        },
+        {
+          "id": "higiene-3",
+          "texto": "Dando uma nota geral para essa barraca, como seria?",
+          "opcoes": [
+            { "id": "higiene-3-a", "texto": "Nota 10, o verdadeiro pipoco do trovão!" },
+            { "id": "higiene-3-b", "texto": "Nota 7, tá no caminho certo." },
+            { "id": "higiene-3-c", "texto": "Nota baixa, precisa dar uma melhorada boa." }
+          ]
+        }
+      ]
+    }
+  ]
+}
