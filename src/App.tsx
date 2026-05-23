@@ -21,17 +21,26 @@ function App() {
     "acessivel",
   );
 
-  // 1. ESTADO OFICIAL DOS PONTOS (Lê do offline ou começa com 120 para o Mockup)
   const [pontos, setPontos] = useState(() => {
     return Number(localStorage.getItem("caju_pontos") || "120");
   });
 
-  // 2. FUNÇÃO QUE ATUALIZA PONTOS (Na tela e no offline)
   const adicionarPontos = (quantidade: number) => {
     const novosPontos = pontos + quantidade;
     localStorage.setItem("caju_pontos", novosPontos.toString());
     setPontos(novosPontos);
     alert(`Sucesso! Você ganhou +${quantidade} Pontos Caju!`);
+  };
+
+  // NOVA FUNÇÃO: Deduzir pontos quando o brinde for resgatado
+  const gastarPontos = (quantidade: number) => {
+    if (pontos >= quantidade) {
+      const novosPontos = pontos - quantidade;
+      localStorage.setItem("caju_pontos", novosPontos.toString());
+      setPontos(novosPontos);
+      return true; // Sucesso
+    }
+    return false; // Falhou (pontos insuficientes)
   };
 
   return (
@@ -47,7 +56,7 @@ function App() {
 
       {screen === "home" && (
         <Home
-          pontos={pontos} // Agora é dinâmico!
+          pontos={pontos}
           perfilAtivo={
             perfil === "acessivel"
               ? "Rota Acessível"
@@ -65,7 +74,7 @@ function App() {
 
       {screen === "passaporte" && (
         <MeuPassaporte
-          pontos={pontos} // Agora é dinâmico!
+          pontos={pontos}
           onNavegar={(tela) =>
             setScreen(tela === "mapa" ? "home" : "passaporte")
           }
@@ -77,14 +86,26 @@ function App() {
       )}
 
       {screen === "resgate" && (
-        <ResgatePremio onVoltar={() => setScreen("passaporte")} />
+        <ResgatePremio
+          pontosDisponiveis={pontos}
+          onVoltar={() => setScreen("passaporte")}
+          onConfirmarResgate={(custo) => {
+            // Quando o "atendente" bipar o QR Code, essa função roda!
+            const sucesso = gastarPontos(custo);
+            if (sucesso) {
+              alert("Brinde retirado com sucesso! Os pontos foram deduzidos.");
+              setScreen("passaporte");
+            } else {
+              alert("Ops! Você não tem pontos suficientes para este prêmio.");
+            }
+          }}
+        />
       )}
 
       {screen === "scanner" && (
         <ScannerQRCode
           onFechar={() => setScreen("home")}
           onSucessoScan={() => {
-            // Quando a câmera lê o QR Code real com sucesso
             adicionarPontos(50);
             setScreen("passaporte");
           }}
@@ -100,7 +121,7 @@ function App() {
         />
       )}
 
-      {/* BOTÃO SECRETO DE PITCH (Aparece apenas na Home ou Passaporte) */}
+      {/* BOTÃO SECRETO DE PITCH */}
       {(screen === "home" || screen === "passaporte") && (
         <button
           onClick={() => adicionarPontos(50)}

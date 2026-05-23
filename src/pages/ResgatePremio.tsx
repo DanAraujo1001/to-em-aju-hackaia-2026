@@ -1,30 +1,33 @@
 import React, { useState, useEffect } from "react";
-import { QRCodeSVG } from "qrcode.react"; // Importação corrigida e blindada!
+import { QRCodeSVG } from "qrcode.react";
 
 interface ResgatePremioProps {
+  pontosDisponiveis: number;
   onVoltar: () => void;
+  onConfirmarResgate: (custo: number) => void; // Nova propriedade
 }
 
-export default function ResgatePremio({ onVoltar }: ResgatePremioProps) {
-  const [timer, setTimer] = useState(59);
+export default function ResgatePremio({
+  pontosDisponiveis,
+  onVoltar,
+  onConfirmarResgate,
+}: ResgatePremioProps) {
   const [qrPayload, setQrPayload] = useState("");
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTimer((prev) => (prev > 1 ? prev - 1 : 59));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
+  // O custo do nosso copo fictício
+  const custoPremio = 100;
 
+  // Roda apenas UMA vez quando a tela abre (o array vazio [] no final garante isso)
   useEffect(() => {
     const payload = {
       tipo: "RESGATE_BRINDE",
-      timestamp: Math.floor(Date.now() / 1000),
-      hashSeguranca:
-        "CAJU-" + Math.random().toString(36).substring(2, 7).toUpperCase(),
+      premio: "Copo Oficial Circuito Caju",
+      custo: custoPremio,
+      hashUnico:
+        "CAJU-" + Math.random().toString(36).substring(2, 9).toUpperCase(),
     };
     setQrPayload(JSON.stringify(payload));
-  }, [timer]);
+  }, []);
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-[#FFA800] via-[#E65C00] to-[#C84B24] flex justify-center selection:bg-[#1A1613] selection:text-white">
@@ -62,13 +65,15 @@ export default function ResgatePremio({ onVoltar }: ResgatePremioProps) {
             <span className="text-sm font-black text-[#1A1613] opacity-60 line-through">
               120
             </span>
-            <span className="text-sm font-black text-white bg-[#1A1613] px-2 py-0.5 rounded-lg">
-              100 pontos
+            <span
+              className={`text-sm font-black text-white px-2 py-0.5 rounded-lg ${pontosDisponiveis >= custoPremio ? "bg-[#1A1613]" : "bg-red-600"}`}
+            >
+              {custoPremio} pontos
             </span>
           </div>
         </div>
 
-        {/* CONTAINER DO QR CODE COM A NOVA BIBLIOTECA */}
+        {/* CONTAINER DO QR CODE */}
         <div className="mt-8 flex flex-col items-center">
           <div className="bg-white border-4 border-[#1A1613] rounded-[40px] p-8 shadow-[8px_8px_0px_0px_#1A1613] flex flex-col items-center w-full max-w-[280px]">
             {qrPayload ? (
@@ -85,13 +90,20 @@ export default function ResgatePremio({ onVoltar }: ResgatePremioProps) {
             )}
           </div>
 
-          <div className="mt-6 flex items-center gap-2 bg-black/20 px-4 py-2 rounded-full text-white text-[11px] font-bold border border-white/20">
-            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-            QR válido por {timer}s - regenera automaticamente
+          <div className="mt-4 text-white text-[11px] font-bold text-center">
+            Código Gerado: Único e intransferível
           </div>
         </div>
 
-        <div className="mt-10 bg-[#FFB800] border-2 border-[#1A1613] rounded-3xl p-5 shadow-[4px_4px_0px_0px_#1A1613] flex flex-col gap-3 text-center">
+        {/* BOTÃO DE PITCH (Simula o sistema do Stand de Brindes) */}
+        <button
+          onClick={() => onConfirmarResgate(custoPremio)}
+          className="mt-8 bg-[#1A1613] text-white border-2 border-white rounded-2xl p-4 font-black shadow-[4px_4px_0px_0px_white] hover:translate-y-1 hover:shadow-none transition-all w-full"
+        >
+          👨‍💼 Simular "Bipe" do Atendente (Reduzir -100pts)
+        </button>
+
+        <div className="mt-6 bg-[#FFB800] border-2 border-[#1A1613] rounded-3xl p-4 shadow-[4px_4px_0px_0px_#1A1613] flex flex-col gap-3 text-center">
           <p className="text-sm font-black text-[#1A1613] leading-tight">
             📍 Stand Oficial ao lado do Palco Luiz Gonzaga
           </p>
