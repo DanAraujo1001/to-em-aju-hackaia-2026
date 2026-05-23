@@ -1,34 +1,58 @@
-// src/App.tsx
 import "./App.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import EscolhaCircuito from "./pages/EscolhaCircuito";
 import Home from "./pages/Home";
 import MeuPassaporte from "./pages/MeuPassaporte";
 import ResgatePremio from "./pages/ResgatePremio";
 import ScannerQRCode from "./pages/ScannerQRCode";
 import Cadastro from "./pages/Cadastro";
-import InstallBanner from "./components/InstallBanner"; // 👈 NOVO
+import InstallBanner from "./components/InstallBanner";
+import { useAppStore } from "./store/useAppStore";
 
 type Screen =
+  | "cadastro"
   | "escolha"
   | "home"
   | "passaporte"
   | "resgate"
-  | "scanner"
-  | "cadastro";
+  | "scanner";
 
 function App() {
-  const [screen, setScreen] = useState<Screen>("escolha");
-  const [perfil, setPerfil] = useState<"acessivel" | "conforto" | "explorador">(
-    "acessivel",
+  const store = useAppStore();
+
+  const [screen, setScreen] = useState<Screen>(() => {
+    if (!store.cadastroCompleto) return "cadastro";
+    return "home";
+  });
+
+  const [premioSelecionadoId, setPremioSelecionadoId] = useState<number | null>(
+    null,
   );
+
+  useEffect(() => {
+    if (store.cadastroCompleto && screen === "cadastro") {
+      setScreen("escolha");
+    }
+  }, [store.cadastroCompleto, screen]);
+
+  const premioSelecionado =
+    store.recompensas.find((r) => r.id === premioSelecionadoId) ?? null;
 
   return (
     <>
+      {screen === "cadastro" && (
+        <Cadastro
+          onConfirmar={(dados) => {
+            store.confirmarCadastro(dados);
+            setScreen("escolha");
+          }}
+        />
+      )}
+
       {screen === "escolha" && (
         <EscolhaCircuito
           onSelecionarPerfil={(p) => {
-            setPerfil(p);
+            store.selecionarPerfil(p);
             setScreen("home");
           }}
         />
@@ -37,31 +61,35 @@ function App() {
       {screen === "home" && (
         <>
           <Home
-            pontos={120}
-            perfilAtivo={
-              perfil === "acessivel"
-                ? "Rota Acessível"
-                : perfil === "conforto"
-                  ? "Rota Conforto"
-                  : "Rota Explorador"
-            }
+            pontos={store.pontos}
+            perfilAtivo={store.perfilLabel}
+            barracas={store.barracas}
+            checkins={store.checkins}
             onNavegar={(tela) =>
               setScreen(tela === "mapa" ? "home" : "passaporte")
             }
             onOpenScanner={() => setScreen("scanner")}
-            onSelectBarracaPlaceholder={() => {}}
+            onFazerCheckin={(barracaId) => store.fazerCheckin(barracaId)}
           />
-          <InstallBanner /> {/* 👈 NOVO: aparece flutuando sobre a Home */}
+          <InstallBanner />
         </>
       )}
 
       {screen === "passaporte" && (
         <MeuPassaporte
-          pontos={120}
+          pontos={store.pontos}
+          figurinhas={store.figurinhas}
+          recompensas={store.recompensas}
+          premiosResgatados={store.premiosResgatados}
+          proximoPremio={store.proximoPremio}
+          progressoProximoPremio={store.progressoProximoPremio}
+          totalFigurinhasCarimbadas={store.totalFigurinhasCarimbadas}
           onNavegar={(tela) =>
             setScreen(tela === "mapa" ? "home" : "passaporte")
           }
-          onResgatarPremio={(_id) => {
+          onResgatarPremio={(id) => {
+            store.resgatarPremio(id);
+            setPremioSelecionadoId(id);
             setScreen("resgate");
           }}
           onVoltar={() => setScreen("home")}
@@ -69,23 +97,23 @@ function App() {
       )}
 
       {screen === "resgate" && (
-        <ResgatePremio onVoltar={() => setScreen("passaporte")} />
+        <ResgatePremio
+          premio={premioSelecionado}
+          onVoltar={() => setScreen("passaporte")}
+        />
       )}
 
       {screen === "scanner" && (
         <ScannerQRCode
           onFechar={() => setScreen("home")}
           onSucessoScan={() => {
+            const barracaNaoVisitada = store.barracas.find(
+              (b) => !store.checkins.includes(b.id),
+            );
+            if (barracaNaoVisitada) {
+              store.fazerCheckin(barracaNaoVisitada.id);
+            }
             setScreen("passaporte");
-          }}
-        />
-      )}
-
-      {screen === "cadastro" && (
-        <Cadastro
-          onConfirmar={(dados) => {
-            alert(`Inscrição confirmada: ${dados.nome}`);
-            setScreen("home");
           }}
         />
       )}
