@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import iconeCarteira from "../assets/icons/carteira.svg";
 import iconePontoCaju from "../assets/icons/ponto-caju.svg";
 import iconeQr from "../assets/icons/qr-code.svg";

@@ -1,5 +1,3 @@
-import React from "react";
-
 interface BottomNavProps {
   active: "mapa" | "passaporte";
   onNavegar: (_tela: "mapa" | "passaporte") => void;

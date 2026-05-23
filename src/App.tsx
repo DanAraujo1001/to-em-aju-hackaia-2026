@@ -1,11 +1,13 @@
+// src/App.tsx
 import "./App.css";
-import React, { useState } from "react";
+import { useState } from "react";
 import EscolhaCircuito from "./pages/EscolhaCircuito";
 import Home from "./pages/Home";
 import MeuPassaporte from "./pages/MeuPassaporte";
 import ResgatePremio from "./pages/ResgatePremio";
 import ScannerQRCode from "./pages/ScannerQRCode";
 import Cadastro from "./pages/Cadastro";
+import InstallBanner from "./components/InstallBanner"; // 👈 NOVO
 
 type Screen =
   | "escolha"
@@ -33,21 +35,24 @@ function App() {
       )}
 
       {screen === "home" && (
-        <Home
-          pontos={120}
-          perfilAtivo={
-            perfil === "acessivel"
-              ? "Rota Acessível"
-              : perfil === "conforto"
-                ? "Rota Conforto"
-                : "Rota Explorador"
-          }
-          onNavegar={(tela) =>
-            setScreen(tela === "mapa" ? "home" : "passaporte")
-          }
-          onOpenScanner={() => setScreen("scanner")}
-          onSelectBarracaPlaceholder={() => {}}
-        />
+        <>
+          <Home
+            pontos={120}
+            perfilAtivo={
+              perfil === "acessivel"
+                ? "Rota Acessível"
+                : perfil === "conforto"
+                  ? "Rota Conforto"
+                  : "Rota Explorador"
+            }
+            onNavegar={(tela) =>
+              setScreen(tela === "mapa" ? "home" : "passaporte")
+            }
+            onOpenScanner={() => setScreen("scanner")}
+            onSelectBarracaPlaceholder={() => {}}
+          />
+          <InstallBanner /> {/* 👈 NOVO: aparece flutuando sobre a Home */}
+        </>
       )}
 
       {screen === "passaporte" && (
