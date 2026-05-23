@@ -1,9 +1,11 @@
+// src/store/useAppStore.ts
 import { useState, useEffect, useCallback } from "react";
 import { FIGURINHAS_MOCK, type Figurinha } from "../mocks/figurinhas";
 import { RECOMPENSAS_MOCK, type Recompensa } from "../mocks/recompensas";
 import { BARRACAS_MOCK, type Barraca } from "../mocks/barracas";
-import { type Usuario, USUARIO_INICIAL } from "../mocks/usuario";
+import { type Usuario, USUARIO_INICIAL } from "../mocks/usuario"; // <-- Usuário atualizado
 
+// Chaves do localStorage
 const STORAGE_KEYS = {
   PONTOS: "circuito_caju:pontos",
   PERFIL: "circuito_caju:perfil",
@@ -14,6 +16,7 @@ const STORAGE_KEYS = {
   CADASTRO_COMPLETO: "circuito_caju:cadastro_completo",
 } as const;
 
+// Helper genérico para ler do localStorage com fallback
 function lerStorage<T>(chave: string, fallback: T): T {
   try {
     const item = localStorage.getItem(chave);
@@ -23,6 +26,7 @@ function lerStorage<T>(chave: string, fallback: T): T {
   }
 }
 
+// Helper genérico para salvar no localStorage
 function salvarStorage<T>(chave: string, valor: T): void {
   try {
     localStorage.setItem(chave, JSON.stringify(valor));
@@ -34,20 +38,29 @@ function salvarStorage<T>(chave: string, valor: T): void {
 export type PerfilType = "acessivel" | "conforto" | "explorador";
 
 export interface AppState {
+  // Dados do usuário
   usuario: Usuario;
   cadastroCompleto: boolean;
+
+  // Progresso do jogo
   pontos: number;
   perfil: PerfilType;
   figurinhas: Figurinha[];
   premiosResgatados: number[];
-  checkins: number[];
+  checkins: number[]; // IDs das barracas já visitadas
+
+  // Dados estáticos (mocks)
   recompensas: Recompensa[];
   barracas: Barraca[];
+
+  // Ações
   confirmarCadastro: (_usuario: Usuario) => void;
   selecionarPerfil: (_perfil: PerfilType) => void;
   fazerCheckin: (_barracaId: number) => void;
   resgatarPremio: (_premioId: number) => void;
   resetarProgresso: () => void;
+
+  // Computed
   perfilLabel: string;
   proximoPremio: Recompensa | null;
   progressoProximoPremio: number;
@@ -55,6 +68,7 @@ export interface AppState {
 }
 
 export function useAppStore(): AppState {
+  // --- Estado persistido ---
   const [usuario, setUsuario] = useState<Usuario>(() =>
     lerStorage(STORAGE_KEYS.USUARIO, USUARIO_INICIAL),
   );
@@ -83,6 +97,7 @@ export function useAppStore(): AppState {
     lerStorage(STORAGE_KEYS.CHECKINS, []),
   );
 
+  // --- Sincroniza com localStorage sempre que o estado muda ---
   useEffect(() => {
     salvarStorage(STORAGE_KEYS.USUARIO, usuario);
   }, [usuario]);
@@ -111,6 +126,7 @@ export function useAppStore(): AppState {
     salvarStorage(STORAGE_KEYS.CHECKINS, checkins);
   }, [checkins]);
 
+  // --- Ações ---
   const confirmarCadastro = useCallback((dados: Usuario) => {
     setUsuario(dados);
     setCadastroCompleto(true);
@@ -122,13 +138,19 @@ export function useAppStore(): AppState {
 
   const fazerCheckin = useCallback(
     (barracaId: number) => {
+      // Evita checkin duplicado
       if (checkins.includes(barracaId)) return;
 
       const barraca = BARRACAS_MOCK.find((b) => b.id === barracaId);
       if (!barraca) return;
 
+      // Adiciona pontos
       setPontos((prev) => prev + barraca.pontosCheckin);
+
+      // Registra o checkin
       setCheckins((prev) => [...prev, barracaId]);
+
+      // Carimba a figurinha correspondente
       setFigurinhas((prev) =>
         prev.map((fig) =>
           fig.id === barraca.figurinhaId ? { ...fig, carimbado: true } : fig,
@@ -157,6 +179,7 @@ export function useAppStore(): AppState {
     setCheckins([]);
   }, []);
 
+  // --- Computed values ---
   const perfilLabel =
     perfil === "acessivel"
       ? "Rota Acessível"
@@ -178,6 +201,7 @@ export function useAppStore(): AppState {
   ).length;
 
   return {
+    // Estado
     usuario,
     cadastroCompleto,
     pontos,
@@ -185,13 +209,19 @@ export function useAppStore(): AppState {
     figurinhas,
     premiosResgatados,
     checkins,
+
+    // Dados estáticos
     recompensas: RECOMPENSAS_MOCK,
     barracas: BARRACAS_MOCK,
+
+    // Ações
     confirmarCadastro,
     selecionarPerfil,
     fazerCheckin,
     resgatarPremio,
     resetarProgresso,
+
+    // Computed
     perfilLabel,
     proximoPremio,
     progressoProximoPremio,

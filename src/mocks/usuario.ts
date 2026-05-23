@@ -1,11 +1,11 @@
 export interface Usuario {
   nome: string;
+  cpf: string;
   origem: string;
-  comoConheceu: string;
 }
 
 export const USUARIO_INICIAL: Usuario = {
   nome: "",
+  cpf: "",
   origem: "",
-  comoConheceu: "",
 };
