@@ -19,7 +19,7 @@ interface Figurinha {
 
 interface MeuPassaporteProps {
   pontos?: number;
-  onNavegar: (_tela: "mapa" | "passaporte") => void;
+  onNavegar: (_tela: "mapa" | "passaporte" | "foto") => void; // TIPAGEM ATUALIZADA
   onResgatarPremio: (_idPremio: number) => void;
   onVoltar?: () => void;
 }

@@ -6,6 +6,7 @@ import MeuPassaporte from "./pages/MeuPassaporte";
 import ResgatePremio from "./pages/ResgatePremio";
 import ScannerQRCode from "./pages/ScannerQRCode";
 import Cadastro from "./pages/Cadastro";
+import FotoMoldura from "./pages/FotoMoldura"; // IMPORTAMOS A NOVA TELA AQUI
 
 type Screen =
   | "escolha"
@@ -13,7 +14,8 @@ type Screen =
   | "passaporte"
   | "resgate"
   | "scanner"
-  | "cadastro";
+  | "cadastro"
+  | "foto";
 
 function App() {
   const [screen, setScreen] = useState<Screen>("escolha");
@@ -32,15 +34,25 @@ function App() {
     alert(`Sucesso! Você ganhou +${quantidade} Pontos Caju!`);
   };
 
-  // NOVA FUNÇÃO: Deduzir pontos quando o brinde for resgatado
   const gastarPontos = (quantidade: number) => {
     if (pontos >= quantidade) {
       const novosPontos = pontos - quantidade;
       localStorage.setItem("caju_pontos", novosPontos.toString());
       setPontos(novosPontos);
-      return true; // Sucesso
+      return true;
     }
-    return false; // Falhou (pontos insuficientes)
+    return false;
+  };
+
+  // Função centralizada para controlar a navegação do Menu Inferior
+  const lidarComNavegacaoInferior = (tela: "mapa" | "passaporte" | "foto") => {
+    if (tela === "foto") {
+      setScreen("foto");
+    } else if (tela === "mapa") {
+      setScreen("home");
+    } else {
+      setScreen("passaporte");
+    }
   };
 
   return (
@@ -64,9 +76,7 @@ function App() {
                 ? "Rota Conforto"
                 : "Rota Explorador"
           }
-          onNavegar={(tela) =>
-            setScreen(tela === "mapa" ? "home" : "passaporte")
-          }
+          onNavegar={lidarComNavegacaoInferior} // Usa a nova lógica de navegação
           onOpenScanner={() => setScreen("scanner")}
           onSelectBarracaPlaceholder={() => {}}
         />
@@ -75,13 +85,23 @@ function App() {
       {screen === "passaporte" && (
         <MeuPassaporte
           pontos={pontos}
-          onNavegar={(tela) =>
-            setScreen(tela === "mapa" ? "home" : "passaporte")
-          }
+          onNavegar={lidarComNavegacaoInferior} // Usa a nova lógica de navegação
           onResgatarPremio={(_id) => {
             setScreen("resgate");
           }}
           onVoltar={() => setScreen("home")}
+        />
+      )}
+
+      {/* NOVA TELA DE MOLDURA */}
+      {screen === "foto" && (
+        <FotoMoldura
+          onVoltar={() => setScreen("home")}
+          onCompartilhar={(pontosGanhos) => {
+            // Ao compartilhar, ganha os pontos e vai direto ver eles caindo no Passaporte!
+            adicionarPontos(pontosGanhos);
+            setScreen("passaporte");
+          }}
         />
       )}
 
@@ -90,7 +110,6 @@ function App() {
           pontosDisponiveis={pontos}
           onVoltar={() => setScreen("passaporte")}
           onConfirmarResgate={(custo) => {
-            // Quando o "atendente" bipar o QR Code, essa função roda!
             const sucesso = gastarPontos(custo);
             if (sucesso) {
               alert("Brinde retirado com sucesso! Os pontos foram deduzidos.");

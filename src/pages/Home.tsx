@@ -7,7 +7,7 @@ import BottomNav from "../components/BottomNav";
 interface HomeProps {
   pontos: number;
   perfilAtivo: string;
-  onNavegar: (_tela: "mapa" | "passaporte") => void;
+  onNavegar: (_tela: "mapa" | "passaporte" | "foto") => void; // TIPAGEM ATUALIZADA
   onOpenScanner: () => void;
   onSelectBarracaPlaceholder?: () => void;
 }
