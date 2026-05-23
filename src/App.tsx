@@ -5,6 +5,7 @@ import Home from "./pages/Home";
 import MeuPassaporte from "./pages/MeuPassaporte";
 import ResgatePremio from "./pages/ResgatePremio";
 import ScannerQRCode from "./pages/ScannerQRCode";
+import Feedback, { type FeedbackQuestionario } from "./pages/Feedback.tsx";
 import Cadastro from "./pages/Cadastro";
 import InstallBanner from "./components/InstallBanner";
 import { useAppStore } from "./store/useAppStore";
@@ -15,7 +16,8 @@ type Screen =
   | "home"
   | "passaporte"
   | "resgate"
-  | "scanner";
+  | "scanner"
+  | "feedback";
 
 function App() {
   const store = useAppStore();
@@ -29,6 +31,10 @@ function App() {
     null,
   );
 
+  const [feedbackBarracaId, setFeedbackBarracaId] = useState<number | null>(
+    null,
+  );
+
   useEffect(() => {
     if (store.cadastroCompleto && screen === "cadastro") {
       setScreen("escolha");
@@ -37,6 +43,9 @@ function App() {
 
   const premioSelecionado =
     store.recompensas.find((r) => r.id === premioSelecionadoId) ?? null;
+
+  const barracaFeedbackSelecionada =
+    store.barracas.find((b) => b.id === feedbackBarracaId) ?? null;
 
   return (
     <>
@@ -103,6 +112,26 @@ function App() {
         />
       )}
 
+      {screen === "feedback" && barracaFeedbackSelecionada && (
+        <Feedback
+          barraca={barracaFeedbackSelecionada}
+          pontosAtuais={store.pontos}
+          onFinalizar={() => {
+            setFeedbackBarracaId(null);
+            setScreen("passaporte");
+          }}
+          onRegistrarFeedback={(feedback: FeedbackQuestionario) =>
+            store.registrarFeedback({
+              barracaId: barracaFeedbackSelecionada.id,
+              barracaNome: barracaFeedbackSelecionada.nome,
+              conjuntoId: feedback.conjuntoId,
+              respostas: feedback.respostas,
+              comentario: feedback.comentario,
+            })
+          }
+        />
+      )}
+
       {screen === "scanner" && (
         <ScannerQRCode
           onFechar={() => setScreen("home")}
@@ -112,6 +141,9 @@ function App() {
             );
             if (barracaNaoVisitada) {
               store.fazerCheckin(barracaNaoVisitada.id);
+              setFeedbackBarracaId(barracaNaoVisitada.id);
+              setScreen("feedback");
+              return;
             }
             setScreen("passaporte");
           }}
