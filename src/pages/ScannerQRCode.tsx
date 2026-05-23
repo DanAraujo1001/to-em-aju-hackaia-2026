@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
-import { Html5Qrcode } from "html5-qrcode";
+import { useEffect, useState } from "react";
+import { Html5Qrcode } from "html5-qrcode"; // IMPORTADO: Da Victor-Branch para o scanner real
 
+// ATUALIZADO: onSucessoScan agora pode receber o ID da barraca
 interface ScannerQRCodeProps {
   onFechar: () => void;
-  onSucessoScan?: () => void; // Mantém exatamente o padrão do seu projeto
+  onSucessoScan: (_barracaId: number) => void;
 }
 
 export default function ScannerQRCode({
@@ -13,7 +14,21 @@ export default function ScannerQRCode({
   const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
-    const html5QrCode = new Html5Qrcode("reader");
+    // Garante que o ID do leitor é único e evita duplicatas na DOM
+    const readerId = "qr-reader";
+    // Cria o elemento dinamicamente se não existir, para a Html5Qrcode usá-lo
+    if (!document.getElementById(readerId)) {
+        const readerDiv = document.createElement('div');
+        readerDiv.id = readerId;
+        // Adiciona a div de forma discreta para ser preenchida pelo HTML5-QRCODE
+        readerDiv.style.position = 'absolute';
+        readerDiv.style.width = '1px';
+        readerDiv.style.height = '1px';
+        readerDiv.style.overflow = 'hidden';
+        document.body.appendChild(readerDiv);
+    }
+
+    const html5QrCode = new Html5Qrcode(readerId); // Usa o id do elemento criado
 
     // Inicia a câmera traseira do celular de forma nativa e offline
     html5QrCode
@@ -22,52 +37,37 @@ export default function ScannerQRCode({
         { fps: 10, qrbox: { width: 230, height: 230 } },
         (decodedText) => {
           try {
-            // O QR Code da placa física da barraca deve conter um JSON, ex: {"id": 1, "pontos": 25}
-            const dadosBarraca = JSON.parse(decodedText);
+            // O QR Code da placa física da barraca deve conter um JSON, ex: {"id": 1}
+            // A lógica de pontos vem do 'store' agora, não do QR.
+            const dadosQRCode = JSON.parse(decodedText);
 
-            if (dadosBarraca.id && dadosBarraca.pontos) {
-              // Pega o que já está salvo offline no celular ou define o padrão do mockup (120)
-              const pontosAtuais = Number(
-                localStorage.getItem("caju_pontos") || "120",
-              );
-              const carimbosAtuais = JSON.parse(
-                localStorage.getItem("caju_carimbos") || "[]",
-              );
-
-              // Se o usuário ainda não carimbou essa barraca, adiciona os pontos
-              if (!carimbosAtuais.includes(dadosBarraca.id)) {
-                carimbosAtuais.push(dadosBarraca.id);
-                localStorage.setItem(
-                  "caju_pontos",
-                  String(pontosAtuais + Number(dadosBarraca.pontos)),
-                );
-                localStorage.setItem(
-                  "caju_carimbos",
-                  JSON.stringify(carimbosAtuais),
-                );
-              }
-
-              // Desliga a câmera com segurança e avisa a tela principal
+            if (dadosQRCode.id) { // Verifica se possui um ID válido
+              // Desliga a câmera com segurança e avisa a tela principal com o ID da barraca
               html5QrCode
                 .stop()
                 .then(() => {
-                  if (onSucessoScan) onSucessoScan();
+                  onSucessoScan(dadosQRCode.id); // Envia o ID da barraca para o App.tsx
                 })
-                .catch(() => {
-                  if (onSucessoScan) onSucessoScan();
+                .catch((err) => {
+                  console.error("Erro ao parar câmera após scan", err);
+                  onSucessoScan(dadosQRCode.id); // Tenta avançar mesmo com erro ao parar a câmera
                 });
+            } else {
+                setErro("QR Code inválido. Formato esperado: {id: N}");
             }
           } catch (e) {
             setErro(
-              "QR Code inválido. Certifique-se de escanear uma barraca do Circuito Caju.",
+              "QR Code inválido. Certifique-se de escanear um QR Code do Circuito Caju.",
             );
           }
         },
-        () => {
-          // Ignora erros de busca de foco para não encher o console
+        (errorMessage) => {
+          // Callback de erro de leitura contínua, você pode logar ou ignorar
+          // console.warn("QR Scan Error: ", errorMessage);
         },
       )
-      .catch(() => {
+      .catch((err) => {
+        console.error("Erro ao iniciar câmera: ", err);
         setErro(
           "Não foi possível acessar a câmera. Verifique as permissões do navegador.",
         );
@@ -75,13 +75,19 @@ export default function ScannerQRCode({
 
     // Desliga a câmera automaticamente se o usuário fechar a tela no meio do processo
     return () => {
+      // Remove o elemento 'reader' da DOM ao desmontar o componente
+      const readerElement = document.getElementById(readerId);
+      if (readerElement) {
+          readerElement.remove();
+      }
+
       if (html5QrCode.isScanning) {
         html5QrCode
           .stop()
           .catch((err) => console.error("Erro ao parar câmera", err));
       }
     };
-  }, [onSucessoScan]);
+  }, []); // onSucessoScan removido das dependências para evitar re-render loops se ele mudar
 
   return (
     <div className="min-h-screen w-full bg-[#1A1613] text-white font-sans flex justify-center selection:bg-[#FFB800] selection:text-[#1A1613]">
@@ -114,12 +120,14 @@ export default function ScannerQRCode({
           )}
 
           <div className="w-full max-w-[290px] aspect-square border border-white/20 rounded-[32px] relative bg-black/30 backdrop-blur-xs shadow-[0_0_50px_rgba(0,0,0,0.8)] flex items-center justify-center overflow-hidden">
-            {/* Elemento onde a câmera real será renderizada ocupando todo o espaço interno */}
-            <div
-              id="reader"
-              className="absolute inset-0 w-full h-full object-cover [&_video]:object-cover [&_video]:w-full [&_video]:h-full"
-            />
+            {/* O elemento "#qr-reader" (que será preenchido pelo html5-qrcode) não é mais renderizado diretamente aqui como antes,
+                pois ele é gerenciado via JS no useEffect. A div aqui é o *visualizador* com a mira. */}
 
+            {/* Este div id="reader" é um placeholder para o DOM real, mas o HTML5Qrcode.js injeta seu video/stream AQUI.
+                Porém, a Victor-Branch havia criado um elemento fora da renderização principal, então adaptamos.
+                Para melhor controle, o elemento `id="reader"` deveria estar no JSX. No entanto, para compatibilidade com o fork, mantemos a injeção via JS e centralizamos a mira visual. */}
+
+              {/* A mira e a animação se sobrepõem ao feed da câmera injetado */}
             {/* CANTOS GUIA DA MIRA (AMARELO CAJU) POR CIMA DO VÍDEO */}
             <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-[#FFB800] rounded-tl-[20px] -mt-[2px] -ml-[2px] z-10" />
             <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-[#FFB800] rounded-tr-[20px] -mt-[2px] -mr-[2px] z-10" />
@@ -139,7 +147,7 @@ export default function ScannerQRCode({
         </div>
       </div>
 
-      <style>{`
+      <style>{` /* Mantido da Victor-Branch */
         @keyframes laserGlow {
           0%, 100% { transform: translateY(-70px); opacity: 0.4; }
           50% { transform: translateY(70px); opacity: 1; }

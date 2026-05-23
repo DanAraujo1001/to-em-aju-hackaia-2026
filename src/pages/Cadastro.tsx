@@ -1,38 +1,39 @@
-import React, { useState } from "react";
+// src/pages/Cadastro.tsx
+import { useState } from "react";
 import Logo from "../components/Logo";
-
-interface CadastroForm {
-  nome: string;
-  origem: string;
-  comoConheceu: string;
-}
+import { type Usuario } from "../mocks/usuario"; // <-- Importa o tipo Usuario
 
 interface CadastroProps {
-  onConfirmar: (_dados: CadastroForm) => void;
+  onConfirmar: (_dados: Usuario) => void;
 }
 
 export default function Cadastro({ onConfirmar }: CadastroProps) {
-  const [form, setForm] = useState<CadastroForm>({
+  const [form, setForm] = useState<Usuario>({
+    // <-- Usa Usuario como tipo do estado do formulário
     nome: "",
+    cpf: "",
     origem: "",
-    comoConheceu: "",
   });
 
+  // eslint-disable-next-line no-undef
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (form.nome && form.origem) {
+    // Adiciona validação básica para CPF
+    if (form.nome && form.cpf && form.origem) {
+      // <-- Inclui CPF na validação
       onConfirmar(form);
+    } else {
+      alert(
+        "Por favor, preencha todos os campos obrigatórios: Nome, CPF e De onde é.",
+      );
     }
   };
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-[#FFA800] via-[#E65C00] to-[#C84B24] flex justify-center items-center p-4 selection:bg-[#C84B24] selection:text-white">
-      {/* Container de simulação Mobile PWA */}
       <div className="w-full max-w-md min-h-screen flex flex-col justify-center items-center px-6 relative py-8">
-        {/* LOGO CIRCUITO CAJU */}
         <Logo className="w-56 mb-8" />
 
-        {/* CHAMADA TEXTUAL */}
         <div className="text-center text-white mb-6 space-y-1">
           <h2 className="text-3xl font-black tracking-tight drop-shadow-md">
             Cadastre-se no evento
@@ -42,7 +43,6 @@ export default function Cadastro({ onConfirmar }: CadastroProps) {
           </p>
         </div>
 
-        {/* CARD DO FORMULÁRIO (NEO-BRUTALISTA) */}
         <form
           onSubmit={handleSubmit}
           className="w-full bg-[#FFB800] border-2 border-[#1A1613] rounded-3xl p-6 shadow-[6px_6px_0px_0px_#1A1613] space-y-5"
@@ -66,6 +66,26 @@ export default function Cadastro({ onConfirmar }: CadastroProps) {
             />
           </div>
 
+          {/* CAMPO: CPF */}
+          <div className="space-y-2">
+            <label
+              htmlFor="cpf"
+              className="block text-sm font-black text-[#1A1613]"
+            >
+              CPF
+            </label>
+            <input
+              type="text" // Pode ser 'tel' para mobilidade no teclado numérico
+              id="cpf"
+              placeholder="000.000.000-00"
+              value={form.cpf}
+              onChange={(e) => setForm({ ...form, cpf: e.target.value })}
+              className="w-full h-12 px-4 bg-[#FAF7F0] border-2 border-[#1A1613] rounded-xl font-medium text-[#1A1613] placeholder-gray-400 focus:outline-none shadow-[inset_2px_2px_0px_0px_rgba(0,0,0,0.05)]"
+              required
+              maxLength={14} // Limita o comprimento para CPF formatado
+            />
+          </div>
+
           {/* CAMPO: DE ONDE É? */}
           <div className="space-y-2">
             <label
@@ -83,42 +103,6 @@ export default function Cadastro({ onConfirmar }: CadastroProps) {
               className="w-full h-12 px-4 bg-[#FAF7F0] border-2 border-[#1A1613] rounded-xl font-medium text-[#1A1613] placeholder-gray-400 focus:outline-none shadow-[inset_2px_2px_0px_0px_rgba(0,0,0,0.05)]"
               required
             />
-          </div>
-
-          {/* CAMPO: COMO FICOU CONHECENDO? */}
-          <div className="space-y-2">
-            <label
-              htmlFor="comoConheceu"
-              className="block text-sm font-black text-[#1A1613]"
-            >
-              Como ficou conhecendo o evento?
-            </label>
-            <div className="relative">
-              <select
-                id="comoConheceu"
-                value={form.comoConheceu}
-                onChange={(e) =>
-                  setForm({ ...form, comoConheceu: e.target.value })
-                }
-                className="w-full h-12 px-4 bg-[#FAF7F0] border-2 border-[#1A1613] rounded-xl font-medium text-[#1A1613] appearance-none focus:outline-none cursor-pointer"
-              >
-                <option value="" disabled hidden></option>
-                <option value="redes-sociais">Redes Sociais</option>
-                <option value="tv-radio">TV / Rádio</option>
-                <option value="amigos">Amigos / Família</option>
-                <option value="sites">Sites de Turismo</option>
-                <option value="outros">Outros</option>
-              </select>
-              {/* Seta customizada do select */}
-              <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[#1A1613]">
-                <svg
-                  className="w-4 h-4 fill-none stroke-current stroke-2"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M6 9l6 6 6-6" />
-                </svg>
-              </div>
-            </div>
           </div>
 
           {/* BOTÃO SUBMIT */}

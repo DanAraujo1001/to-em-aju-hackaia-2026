@@ -1,5 +1,3 @@
-import React from "react";
-
 interface BottomNavProps {
   active: "mapa" | "passaporte";
   onNavegar: (tela: "mapa" | "passaporte" | "foto") => void; // Adicionamos 'foto' aqui
