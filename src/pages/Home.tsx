@@ -4,15 +4,16 @@ import iconePontoCaju from "../assets/icons/ponto-caju.svg";
 import iconeQr from "../assets/icons/qr-code.svg";
 import BottomNav from "../components/BottomNav";
 import { type Barraca } from "../mocks/barracas";
+import { LUGARES_MOCK, type Lugar } from "../mocks/lugares"; // Re-importado
 
 interface HomeProps {
   pontos: number;
   perfilAtivo: string;
-  barracas: Barraca[];
-  checkins: number[];
-  onNavegar: (_tela: "mapa" | "passaporte") => void;
+  barracas: Barraca[]; // MANTIDO: Vindo do `useAppStore` para renderizar no mapa
+  checkins: number[]; // MANTIDO: Vindo do `useAppStore` para verificar checkins
+  onNavegar: (_tela: "mapa" | "passaporte" | "foto") => void; // ATUALIZADO: Inclui 'foto'
   onOpenScanner: () => void;
-  onFazerCheckin: (_barracaId: number) => void;
+  onFazerCheckin: (_barracaId: number) => void; // MANTIDO: Função para o `useAppStore`
 }
 
 export default function Home({
@@ -24,15 +25,22 @@ export default function Home({
   onOpenScanner,
   onFazerCheckin,
 }: HomeProps) {
-  const [barracaSelecionada, setBarracaSelecionada] = useState<Barraca | null>(
-    null,
-  );
+  const [barracaSelecionada, setBarracaSelecionada] =
+    useState<Barraca | null>(null);
+  const [lugarSelecionado, setLugarSelecionado] = useState<Lugar | null>(null); // Re-incluído da última refatoração
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [isHighContrast, setIsHighContrast] = useState(false);
 
   const handleAbrirBarraca = (barraca: Barraca) => {
     setBarracaSelecionada(barraca);
+    setLugarSelecionado(null); // Garante que apenas um tipo de item esteja ativo
+    setIsMenuOpen(true);
+  };
+
+  const handleAbrirLugar = (lugar: Lugar) => { // Re-incluído
+    setLugarSelecionado(lugar);
+    setBarracaSelecionada(null); // Garante que apenas um tipo de item esteja ativo
     setIsMenuOpen(true);
   };
 
@@ -41,12 +49,19 @@ export default function Home({
     setIsPlayingAudio(false);
     setIsMenuOpen(false);
     setBarracaSelecionada(null);
+    setLugarSelecionado(null); // Re-incluído: Limpa lugar também
   };
 
   const handleTextToSpeech = () => {
-    if (!barracaSelecionada) return;
+    let textoDescricao = "";
 
-    const textoDescricao = `${barracaSelecionada.nome}, por ${barracaSelecionada.responsavel}. ${barracaSelecionada.descricao}`;
+    if (barracaSelecionada) {
+      textoDescricao = `${barracaSelecionada.nome}, por ${barracaSelecionada.responsavel}. ${barracaSelecionada.descricao}`;
+    } else if (lugarSelecionado) { // Re-incluído
+      textoDescricao = `${lugarSelecionado.nome}. ${lugarSelecionado.descricaoDetalhada}`;
+    } else {
+        return;
+    }
 
     if ("speechSynthesis" in window) {
       if (isPlayingAudio) {
@@ -99,8 +114,12 @@ export default function Home({
         <div
           className="flex-1 w-full bg-[#E5E0D8] relative z-10 cursor-pointer"
           onClick={() => {
-            const primeiraBarraca = barracas[0];
-            if (primeiraBarraca) handleAbrirBarraca(primeiraBarraca);
+            // Agora, ao invés de barraca, abre o primeiro lugar (CajuHub)
+            const primeiroLugar = LUGARES_MOCK[0];
+            if (primeiroLugar) handleAbrirLugar(primeiroLugar);
+            // OU, para abrir uma barraca, seria:
+            // const primeiraBarraca = barracas[0];
+            // if (primeiraBarraca) handleAbrirBarraca(primeiraBarraca);
           }}
           title="Espaço reservado para o Canvas do Mapa"
         >
@@ -115,8 +134,8 @@ export default function Home({
           </div>
         </div>
 
-        {/* === DRAWER DA BARRACA === */}
-        {isMenuOpen && barracaSelecionada && (
+        {/* === DRAWER DE DETALHES (genérico para Barraca ou Lugar) === */}
+        {isMenuOpen && (barracaSelecionada || lugarSelecionado) && (
           <div
             className="absolute inset-0 bg-black/40 z-70 transition-opacity flex items-end justify-center"
             onClick={handleFecharDrawer}
@@ -125,23 +144,36 @@ export default function Home({
               className="w-full bg-white border-t-4 border-[#1A1613] rounded-t-[32px] p-6 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] flex flex-col gap-5 animate-slide-up relative max-h-[80vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
+              {/* Barra de arrastar */}
               <div
                 className="w-16 h-1.5 bg-[#FFB800] rounded-full mx-auto cursor-pointer"
                 onClick={handleFecharDrawer}
               />
 
+              {/* Informações Principais (Barraca ou Lugar) */}
               <div className="flex justify-between items-center mt-2">
                 <div className="flex items-center gap-3">
-                  <div className="w-16 h-16 bg-[#FFB800] rounded-2xl border-2 border-[#1A1613] shadow-[2px_2px_0px_0px_#1A1613] flex items-center justify-center text-3xl">
-                    {barracaSelecionada.icone}
+                  {/* Ícone Redondo ou Imagem para o Lugar */}
+                  <div className="w-16 h-16 bg-[#FFB800] rounded-2xl border-2 border-[#1A1613] shadow-[2px_2px_0px_0px_#1A1613] flex items-center justify-center text-3xl overflow-hidden">
+                    {lugarSelecionado?.imagemURL ? (
+                      <img
+                        src={lugarSelecionado.imagemURL}
+                        alt={lugarSelecionado.nome}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      barracaSelecionada?.icone
+                    )}
                   </div>
                   <div>
                     <h3 className="text-xl font-black tracking-tight text-[#1A1613]">
-                      {barracaSelecionada.nome}
+                      {barracaSelecionada?.nome || lugarSelecionado?.nome}
                     </h3>
-                    <p className="text-sm font-medium text-gray-500">
-                      por {barracaSelecionada.responsavel}
-                    </p>
+                    {barracaSelecionada && (
+                      <p className="text-sm font-medium text-gray-500">
+                        por {barracaSelecionada.responsavel}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -153,6 +185,7 @@ export default function Home({
                 </button>
               </div>
 
+              {/* Botões de Acessibilidade */}
               <div className="grid grid-cols-4 gap-3">
                 <button
                   onClick={handleTextToSpeech}
@@ -176,56 +209,76 @@ export default function Home({
                 </button>
               </div>
 
+              {/* Descrição */}
               <div className="bg-[#FAF7F0] border border-orange-200 rounded-2xl p-4 text-sm font-medium text-gray-800 leading-relaxed">
-                {barracaSelecionada.descricao}
+                {barracaSelecionada?.descricao || lugarSelecionado?.descricaoDetalhada || "Nenhuma descrição disponível."}
               </div>
 
-              <div className="space-y-2">
-                <h4 className="font-black text-base text-[#1A1613] tracking-tight">
-                  Cardápio
-                </h4>
-
-                {barracaSelecionada.cardapio.map((item, index) => (
-                  <div
-                    key={index}
-                    className="bg-[#FAF7F0] border-2 border-gray-200 rounded-xl p-3 flex justify-between items-center"
+              {/* === BOTÃO QR CODE PARA LUGARES === */}
+              {lugarSelecionado && ( // Mostra este botão SOMENTE se for um Lugar
+                <div className="flex justify-center mt-3">
+                  <button
+                    onClick={onOpenScanner}
+                    className="w-64 h-12 bg-gradient-to-r from-[#C84B24] to-[#A33614] hover:from-[#A33614] hover:to-[#852A0E] text-white font-black text-sm rounded-full shadow-[2px_2px_0px_0px_#1A1613] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all flex items-center justify-center gap-3 cursor-pointer tracking-wide"
                   >
-                    <span className="font-bold text-sm text-gray-700">
-                      {item.nome}
-                    </span>
-                    <span className="font-black text-sm text-[#E65C00]">
-                      R$ {item.preco}
-                    </span>
-                  </div>
-                ))}
-              </div>
+                    <img src={iconeQr} alt="" className="w-5 h-5" />
+                    Escanear QR do Local
+                  </button>
+                </div>
+              )}
 
-              <button
-                onClick={handleCheckin}
-                disabled={jaFezCheckin}
-                className={`w-full h-14 font-black text-sm border-2 border-[#1A1613] rounded-2xl shadow-[4px_4px_0px_0px_#1A1613] transition-all flex items-center justify-center gap-2 mt-2
-                  ${
-                    jaFezCheckin
-                      ? "bg-gray-200 text-gray-500 border-gray-400 shadow-none cursor-not-allowed"
-                      : "bg-gradient-to-r from-[#FFA800] to-[#E65C00] text-white active:translate-x-0.5 active:translate-y-0.5 active:shadow-none cursor-pointer"
-                  }`}
-              >
-                {jaFezCheckin ? (
-                  <>
-                    <span>✅</span> Check-in já realizado
-                  </>
-                ) : (
-                  <>
-                    <span>🔲</span> Estou aqui / Consumi (+
-                    {barracaSelecionada.pontosCheckin} pts)
-                  </>
-                )}
-              </button>
+              {/* Cardápio (Apenas para Barracas) */}
+              {barracaSelecionada && barracaSelecionada.cardapio.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-black text-base text-[#1A1613] tracking-tight">
+                    Cardápio
+                  </h4>
+                  {barracaSelecionada.cardapio.map((item, index) => (
+                    <div
+                      key={index}
+                      className="bg-[#FAF7F0] border-2 border-gray-200 rounded-xl p-3 flex justify-between items-center"
+                    >
+                      <span className="font-bold text-sm text-gray-700">
+                        {item.nome}
+                      </span>
+                      <span className="font-black text-sm text-[#E65C00]">
+                        R$ {item.preco}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Botão de Check-in (Apenas para Barracas) */}
+              {barracaSelecionada && (
+                <button
+                  onClick={handleCheckin}
+                  disabled={jaFezCheckin}
+                  className={`w-full h-14 font-black text-sm border-2 border-[#1A1613] rounded-2xl shadow-[4px_4px_0px_0px_#1A1613] transition-all flex items-center justify-center gap-2 mt-2
+                    ${
+                      jaFezCheckin
+                        ? "bg-gray-200 text-gray-500 border-gray-400 shadow-none cursor-not-allowed"
+                        : "bg-gradient-to-r from-[#FFA800] to-[#E65C00] text-white active:translate-x-0.5 active:translate-y-0.5 active:shadow-none cursor-pointer"
+                    }`}
+                >
+                  {jaFezCheckin ? (
+                    <>
+                      <span>✅</span> Check-in já realizado
+                    </>
+                  ) : (
+                    <>
+                      <span>🔲</span> Estou aqui / Consumi (+
+                      {barracaSelecionada.pontosCheckin} pts)
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
         )}
 
-        {/* === BOTÃO QR CODE === */}
+        {/* === BOTÃO FLUTUANTE CENTRAL: ESCANEAR QR CODE PRINCIPAL === */}
+        {/* Mantido no lugar para escanear QR de barracas quando o Drawer NÃO estiver aberto */}
         <div className="absolute bottom-30 left-0 right-0 mx-auto w-fit z-20 px-4">
           <button
             onClick={onOpenScanner}
@@ -241,6 +294,7 @@ export default function Home({
           </button>
         </div>
 
+        {/* === BOTTOM NAV === */}
         <BottomNav active="mapa" onNavegar={onNavegar} />
       </div>
     </div>

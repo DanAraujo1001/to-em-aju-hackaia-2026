@@ -1,23 +1,41 @@
 import { useState, useEffect } from "react";
 import { type Recompensa } from "../mocks/recompensas";
+import { QRCodeSVG } from "qrcode.react"; // Importado da Victor-Branch
 
 interface ResgatePremioProps {
-  premio: Recompensa | null;
+  premio: Recompensa | null; // MANTIDO: Receberá o objeto do prêmio
   onVoltar: () => void;
+  onConfirmarResgate: () => void; // ATUALIZADO: Não recebe o custo, pois a lógica de pontos está no store
 }
 
 export default function ResgatePremio({
   premio,
   onVoltar,
+  onConfirmarResgate,
 }: ResgatePremioProps) {
   const [timer, setTimer] = useState(59);
+  const [qrPayload, setQrPayload] = useState("");
 
   useEffect(() => {
+    // Lógica do timer (mantida da main)
     const interval = setInterval(() => {
       setTimer((prev) => (prev > 0 ? prev - 1 : 59));
     }, 1000);
+
+    // Geração do Payload do QR Code (adaptado da Victor-Branch, usando `premio` da main)
+    if (premio) {
+      const payload = {
+        tipo: "RESGATE_BRINDE",
+        premio: premio.titulo,
+        custo: premio.pontosNecessarios,
+        hashUnico:
+          "CAJU-" + Math.random().toString(36).substring(2, 9).toUpperCase(),
+      };
+      setQrPayload(JSON.stringify(payload));
+    }
+
     return () => clearInterval(interval);
-  }, []);
+  }, [premio]); // Dependência adicionada para reagir a mudanças no prêmio
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-[#FFA800] via-[#E65C00] to-[#C84B24] flex justify-center selection:bg-[#1A1613] selection:text-white">
@@ -26,7 +44,7 @@ export default function ResgatePremio({
         <div className="flex items-center gap-4 mt-4">
           <button
             onClick={onVoltar}
-            className="w-10 h-10 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white text-2xl hover:bg-white/40 transition-colors cursor-pointer"
+            className="w-10 h-10 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white text-2xl"
           >
             ←
           </button>
@@ -43,60 +61,64 @@ export default function ResgatePremio({
         {/* === PREVIEW DO PRÊMIO === */}
         <div className="flex flex-col items-center mt-8 text-center">
           <div className="w-32 h-32 bg-[#FAF7F0] border-2 border-[#1A1613] rounded-2xl p-3 shadow-[4px_4px_0px_0px_#1A1613] mb-4 flex items-center justify-center relative">
-            <span className="text-6xl">{premio?.icone ?? "🎁"}</span>
+            <span className="text-6xl">{premio?.icone ?? "🎁"}</span> {/* Usando o ícone do prêmio */}
             <div className="absolute -top-2 -right-2 bg-green-500 text-white text-[8px] font-black px-2 py-1 rounded-full border border-[#1A1613]">
               DISPONÍVEL
             </div>
           </div>
-
           <h3 className="text-xl font-black text-white tracking-tight leading-tight">
             {premio?.titulo ?? "Prêmio"}
           </h3>
           <div className="flex items-center gap-1.5 mt-1">
             <span className="text-sm font-black text-white bg-[#1A1613] px-2 py-0.5 rounded-lg">
-              {premio?.subtitulo ?? ""}
+              {premio?.subtitulo ?? ""} {/* Usando o subtítulo do prêmio */}
             </span>
           </div>
         </div>
 
-        {/* === QR CODE === */}
+        {/* === CONTAINER DO QR CODE === */}
         <div className="mt-8 flex flex-col items-center">
-          <div className="bg-white border-4 border-[#1A1613] rounded-[40px] p-8 shadow-[8px_8px_0px_0px_#1A1613] flex flex-col items-center w-full max-w-[320px] transition-transform hover:scale-102">
-            <svg
-              className="w-full aspect-square text-[#1A1613]"
-              viewBox="0 0 100 100"
-              fill="currentColor"
-            >
-              <path d="M0 0h30v30H0zM10 10h10v10H10zM70 0h30v30H70zM80 10h10v10H80zM0 70h30v30H0zM10 80h10v10H10z" />
-              <path d="M40 0h10v10H40zM55 0h5v5h-5zM40 20h10v5H40zM0 40h10v10H0zM20 40h5v5h-5zM40 40h20v20H40zM70 40h10v10H70zM90 40h10v10H90zM0 55h5v5H0zM15 55h10v5H15zM70 55h5v15H70zM85 55h15v5H85zM40 70h10v10H40zM60 70h5v5h-5zM80 70h20v5H80zM55 85h15v15H55zM85 85h5v5h-5zM95 95h5v5H95z" />
-            </svg>
+          <div className="bg-white border-4 border-[#1A1613] rounded-[40px] p-8 shadow-[8px_8px_0px_0px_#1A1613] flex flex-col items-center w-full max-w-[280px]"> {/* Max width ajustado do Victor-Branch */}
+            {qrPayload ? (
+              <div className="w-full aspect-square flex items-center justify-center">
+                <QRCodeSVG // Usando o componente QRCodeSVG
+                  value={qrPayload}
+                  size={180}
+                  style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                  fgColor="#1A1613"
+                />
+              </div>
+            ) : (
+              <div className="w-[180px] h-[180px] bg-gray-200 animate-pulse rounded-xl" />
+            )}
           </div>
-
-          <div className="mt-6 flex items-center gap-2 bg-black/20 px-4 py-2 rounded-full text-white text-[11px] font-bold border border-white/20">
-            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-            QR válido por {timer}s - regenera automaticamente
+          <div className="mt-4 text-white text-[11px] font-bold text-center"> {/* Estilo do Victor-Branch */}
+            QR válido por{" "}<span>{timer}s</span> - regenera automaticamente
           </div>
         </div>
+
+        {/* === BOTÃO DE PITCH (Simula o sistema do Stand de Brindes) === */}
+        {/* Reutiliza o botão de simular do Victor-Branch, adaptado para o props onConfirmarResgate da main */}
+        <button
+          onClick={onConfirmarResgate} // Usa a nova prop
+          className="mt-8 bg-[#1A1613] text-white border-2 border-white rounded-2xl p-4 font-black shadow-[4px_4px_0px_0px_white] hover:translate-y-1 hover:shadow-none transition-all w-full"
+        >
+          👨‍💼 Simular "Bipe" do Atendente (Confirmar Resgate)
+        </button>
 
         {/* === LOCAL DE RETIRADA === */}
-        <div className="mt-10 bg-[#FFB800] border-2 border-[#1A1613] rounded-3xl p-5 shadow-[4px_4px_0px_0px_#1A1613] flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">📍</span>
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#1A1613]/70">
-              Local de retirada
-            </span>
-          </div>
-          <p className="text-sm font-black text-[#1A1613] leading-tight text-center">
-            Stand Oficial ao lado do Palco Luiz Gonzaga
+        <div className="mt-6 bg-[#FFB800] border-2 border-[#1A1613] rounded-3xl p-4 shadow-[4px_4px_0px_0px_#1A1613] flex flex-col gap-3 text-center">
+          <p className="text-sm font-black text-[#1A1613] leading-tight">
+            📍 Stand Oficial ao lado do Palco Luiz Gonzaga
           </p>
         </div>
 
         {/* === BOTÃO VOLTAR === */}
         <button
-          onClick={onVoltar}
+          onClick={onVoltar} // onVoltar já estava presente
           className="mt-8 text-white font-black text-xs uppercase tracking-widest opacity-80 hover:opacity-100 transition-opacity flex items-center justify-center gap-2"
         >
-          <span>←</span> Voltar ao Mapa
+          <span>←</span> Voltar ao Passaporte
         </button>
       </div>
     </div>

@@ -10,7 +10,7 @@ interface MeuPassaporteProps {
   proximoPremio: Recompensa | null;
   progressoProximoPremio: number;
   totalFigurinhasCarimbadas: number;
-  onNavegar: (_tela: "mapa" | "passaporte") => void;
+  onNavegar: (_tela: "mapa" | "passaporte" | "foto") => void; // ATUALIZADA: Inclui 'foto' (Victor-Branch)
   onResgatarPremio: (_idPremio: number) => void;
   onVoltar?: () => void;
 }
